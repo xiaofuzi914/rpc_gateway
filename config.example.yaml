@@ -1,0 +1,12 @@
+server:
+  addr: ":8080"
+
+chains:
+  ethereum:
+    rpc_endpoints:
+      - "https://rpc.ankr.com/eth"
+      - "https://eth.llamarpc.com"
+
+  bsc:
+    rpc_endpoints:
+      - "https://bsc-dataseed.binance.org"
