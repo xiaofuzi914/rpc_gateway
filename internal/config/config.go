@@ -17,7 +17,7 @@ type ServerConfig struct {
 }
 
 type ChainCfg struct {
-	RPCEndpoints []string `yaml:"rpc_endpoint"`
+	RPCEndpoints []string `yaml:"rpc_endpoints"`
 }
 
 func Load(path string) (*Config, error) {
