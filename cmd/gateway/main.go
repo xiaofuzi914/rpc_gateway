@@ -49,7 +49,7 @@ func main() {
 		log.Printf("Proxy created for chain %s with endpoints: %v", name, chain.RPCEndpoints)
 	}
 
-	mux.HandleFunc("/rpc", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/rpc/", func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("rpc run start")
 		path := strings.TrimPrefix(r.URL.Path, "/rpc/")
 		parts := strings.Split(path, "/")
