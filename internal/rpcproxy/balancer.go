@@ -6,7 +6,38 @@ import (
 
 // EndpointSelector 定义“选一个节点”的接口
 type EndpointSelector interface {
-	Next() string
+	Next() *Node
+}
+
+type RoundRobinSelector struct {
+	nodes   []*Node
+	counter uint32
+}
+
+func NewRoundRobinSelector(nodes []*Node) *RoundRobinSelector {
+	return &RoundRobinSelector{
+		nodes: nodes,
+	}
+}
+
+func (r *RoundRobinSelector) Next() *Node {
+	n := uint32(len(r.nodes))
+
+	if n == 0 {
+		return nil
+	}
+
+	for i := 0; i < int(n); i++ {
+		idx := atomic.AddUint32(&r.counter, 1)
+		node := r.nodes[idx%n]
+		if node.IsHealthy() {
+			return node
+		}
+
+	}
+
+	return nil
+
 }
 
 // RoundRobin 是最简单、最稳定的 LB 实现

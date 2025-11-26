@@ -45,6 +45,9 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to create proxy for chain %s: %v", name, err)
 		}
+
+		p.StartHealthCheck() // 启动健康检查
+
 		proxies[name] = p
 		log.Printf("Proxy created for chain %s with endpoints: %v", name, chain.RPCEndpoints)
 	}

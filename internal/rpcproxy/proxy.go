@@ -12,6 +12,7 @@ import (
 var ErrNoEndpoints = errors.New("no rpc endpoints configured")
 
 type Proxy struct {
+	nodes    []*Node
 	selector EndpointSelector
 	client   *http.Client
 }
@@ -22,14 +23,23 @@ func NewProxy(endpoints []string) (*Proxy, error) {
 		return nil, ErrNoEndpoints
 	}
 
+	nodes := make([]*Node, 0, len(endpoints))
+
 	for _, e := range endpoints {
+		//检查 URL 合法性
 		if _, err := url.Parse(e); err != nil {
 			return nil, err
 		}
+		nodes = append(nodes, &Node{
+			URL: e,
+		})
 	}
 
+	selector := NewRoundRobinSelector(nodes)
+
 	return &Proxy{
-		selector: NewRoundRobin(endpoints),
+		nodes:    nodes,
+		selector: selector,
 		client:   &http.Client{Timeout: 10 * time.Second},
 	}, nil
 }
@@ -53,14 +63,14 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upstream := p.selector.Next()
-	if upstream == "" {
-		http.Error(w, "No upstream available", http.StatusBadGateway)
+	node := p.selector.Next()
+	if node == nil {
+		http.Error(w, "o healthy upstream available", http.StatusServiceUnavailable)
 		return
 	}
 
 	// 构建上游请求
-	req, err := http.NewRequest(http.MethodPost, upstream, r.Body)
+	req, err := http.NewRequest(r.Method, node.URL, r.Body)
 	if err != nil {
 		log.Println("build upstream request error:", err)
 		http.Error(w, "bad gateway", http.StatusBadGateway)
@@ -92,5 +102,7 @@ func (p *Proxy) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		log.Println("copy response body error:", err)
+	}
 }
